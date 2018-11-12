@@ -1,7 +1,7 @@
 #############################################
 # Retire-Convert.ps1
 # Rewrited: 30-Jul-2018
-# Updated: 6-Sep-2018
+# Updated: 12-Nov-2018
 # Billy Zhou
 # This script is used to remove retired employees' office 365 license and disable their aduser account.
 #############################################
@@ -17,23 +17,29 @@ get-pssession | remove-pssession
 #$query = "select * from [dbo].[v_OutlookData] where OutDate <> '' group by Email having count(*) =1"
 #$query = "select * from [dbo].[v_OutlookData] where OutDate <> ''"
 
-$query = "select * from [dbo].[v_OutlookData] where LeaveDate <>'' and LeaveDate <= GETDATE() and email in (select email from v_OutlookData group by email having count(*)=1)"
+$query = "select email,outdate 
+    from [dbo].[v_OutlookData] 
+    where LeaveDate <>'' and LeaveDate <= GETDATE() and email in (select email from v_OutlookData group by email having count(*)=1)"
 #$query = "select * from [dbo].[v_OutlookData] where Email = 'leon.wang@adenservices.com'" 
 
-$connectionString = "Data Source=192.168.0.97;Initial Catalog=eHR;User Id=exchange;Password=exchange"
+$connectionString = "Data Source=97VMDBSERVER.CHOADEN.COM;Initial Catalog=eHR;User Id=exchange;Password=exchange"
 
 #############################################
 ## Prepare Log                         #####
 #############################################
 $batchNo = Get-Date -Format 'yyyyMMdd'
-$runningLog = "C:\log\RetireConvert\RunningLog.log"
-$retireLog = "C:\log\RetireConvert\RetireLog" + $batchNo + ".log"
-#$runningLog = "d:\RunningLog" + ".log"
-#$retireLog = "d:\RetireLog" + $batchNo + ".log"
+$LogPath = "C:\log\RetireConvert\"
+$runningLog = $LogPath + "RunningLog.log"
+$syncBenqADLog = $LogPath + "RetireConvert" + $batchNo + ".log"
+if (!(Test-Path $LogPath))
+{
+    mkdir $LogPath
+}
 
 ######### Prepare Office 365 ##########
 
-$File = "c:\scripts\adminpwd"
+$ScriptFolder = Split-Path $MyInvocation.MyCommand.Definition -Parent
+$File = $ScriptFolder + "\adminpwd"
 [Byte[]] $key = (1..16) 
 
 $Office365Username = "admin@adengroup.onmicrosoft.com"
@@ -85,7 +91,8 @@ foreach ($item in $table.Rows)
         {
             # clear aduser's manager and disabled aduser
             set-aduser $sam -clear manager
-            Set-adUser $sam -Replace @{msExchHideFromAddressLists="TRUE"}
+            Set-ADUser $sam -Replace @{msExchHideFromAddressLists=$True} 
+            #Set-adUser $sam -Replace @{msExchHideFromAddressLists="TRUE"}
             Disable-ADAccount $sam
             #Get-ADUser $sam | Move-ADObject -TargetPath $disabledOuPath
 
@@ -100,8 +107,8 @@ foreach ($item in $table.Rows)
     # write running log
     #$count.ToString() + "`t" + $email + "`t" + $outDate + "`tForwardMail:" + $forwardMail + "`tForwardDate:" + $forwardDate + "`tIsLicensed:" + $msolUser.IsLicensed + "`tADUserStatus:" + $adStatus
     #$count.ToString() + "`t" + $email + "`t" + $outDate + "`tForwardMail:" + $forwardMail + "`tForwardDate:" + $forwardDate + "`tIsLicensed:" + $msolUser.IsLicensed + "`tADUserStatus:" + $adStatus >> $runningLog
-    $count.ToString() + "`t" + $email + "`t" + $outDate + "`tIsLicensed:" + $msolUser.IsLicensed + "`tADUserStatus:" + $adStatus
-    $count.ToString() + "`t" + $email + "`t" + $outDate + "`tIsLicensed:" + $msolUser.IsLicensed + "`tADUserStatus:" + $adStatus >> $runningLog
+    $count.ToString() + "`t" + $email + "`t" + $outDate + "`tIsLicensed:" + $msolUser.IsLicensed + ",`tADUserStatus:" + $adStatus
+    $count.ToString() + "`t" + $email + "`t" + $outDate + "`tIsLicensed:" + $msolUser.IsLicensed + ",`tADUserStatus:" + $adStatus >> $runningLog
 
 	If ($null -ne $msolUser)
 	{
