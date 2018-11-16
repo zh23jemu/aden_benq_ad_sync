@@ -12,17 +12,18 @@ get-pssession | remove-pssession
 ## Prepare BenQ                         #####
 #############################################
 
-#$query = "select * from [dbo].[v_OutlookData] where OutDate > dateadd(d,-30,GETDATE()) AND OutDate <= GETDATE()"
-#$query = "select * from [dbo].[v_OutlookData] where ForwardMail <> '' AND OutDate <= GETDATE() AND ForwardDate >= GETDATE()"
-#$query = "select * from [dbo].[v_OutlookData] where OutDate <> '' group by Email having count(*) =1"
-#$query = "select * from [dbo].[v_OutlookData] where OutDate <> ''"
+$connectionStringBenq = "Data Source=97VMDBSERVER.CHOADEN.COM;Initial Catalog=eHR;User Id=exchange;Password=exchange"
+$connectionStringCadena = "Data Source=ccnsvwhqdwh02.choaden.com;Initial Catalog=BI_HR;User Id=weaden;Password=adenweaden@123"
 
-$query = "select email,outdate 
+$queryBenq = "select email,outdate 
     from [dbo].[v_OutlookData] 
     where LeaveDate <>'' and LeaveDate <= GETDATE() and email in (select email from v_OutlookData group by email having count(*)=1)"
-#$query = "select * from [dbo].[v_OutlookData] where Email = 'leon.wang@adenservices.com'" 
 
-$connectionString = "Data Source=97VMDBSERVER.CHOADEN.COM;Initial Catalog=eHR;User Id=exchange;Password=exchange"
+$queryCadena = "select Email,'' as outdate 
+    from dbo.HR_EMPS_VN 
+    where EmployeeStatus = 'Resigned' and Email like '%@adenservices.com'"
+
+
 
 #############################################
 ## Prepare Log                         #####
@@ -30,7 +31,7 @@ $connectionString = "Data Source=97VMDBSERVER.CHOADEN.COM;Initial Catalog=eHR;Us
 $batchNo = Get-Date -Format 'yyyyMMdd'
 $LogPath = "C:\log\RetireConvert\"
 $runningLog = $LogPath + "RunningLog.log"
-$syncBenqADLog = $LogPath + "RetireConvert" + $batchNo + ".log"
+$RetireLog = $LogPath + "RetireConvert" + $batchNo + ".log"
 if (!(Test-Path $LogPath))
 {
     mkdir $LogPath
@@ -51,18 +52,33 @@ Import-PSSession $exchangeSession -AllowClobber | Out-Null
 
 Connect-MsolService -Credential $Office365Credentials
 
-########## Prepare BenQ Database ###############
-$connection = New-Object -TypeName System.Data.SqlClient.SqlConnection
+########## Prepare Database ###############
+$connectionBenq = New-Object -TypeName System.Data.SqlClient.SqlConnection
 
-$connection.ConnectionString = $connectionString
-$command = $connection.CreateCommand()
-$command.CommandTimeout = 0
-$command.CommandText = $query
+$connectionBenq.ConnectionString = $connectionStringBenq
+$commandBenq = $connectionBenq.CreateCommand()
+$commandBenq.CommandText = $queryBenq
+$adapterBenq = New-Object -TypeName System.Data.SqlClient.SqlDataAdapter $commandBenq
+$datasetBenq = New-Object -TypeName System.Data.DataSet
+$adapterBenq.Fill($datasetBenq)
+$tableBenq=$datasetBenq.Tables[0]
 
-$adapter = New-Object -TypeName System.Data.SqlClient.SqlDataAdapter $command
-$dataset = New-Object -TypeName System.Data.DataSet
-$adapter.Fill($dataset)
-$table = $dataset.Tables[0]
+$connectionBenq.Close()
+
+$connectionCadena = New-Object -TypeName System.Data.SqlClient.SqlConnection
+
+$connectionCadena.ConnectionString = $connectionStringCadena
+$commandCadena = $connectionCadena.CreateCommand()
+$commandCadena.CommandText = $queryCadena
+$adapterCadena = New-Object -TypeName System.Data.SqlClient.SqlDataAdapter $commandCadena
+$datasetCadena = New-Object -TypeName System.Data.DataSet
+$adapterCadena.Fill($datasetCadena)
+$tableCadena=$datasetCadena.Tables[0]
+
+$connectionCadena.Close()
+
+$allData = $tableBenq.Rows + $tableCadena.Rows
+
 $count = 1
 
 $license1 = 'adengroup:ENTERPRISEPACK'
@@ -74,12 +90,10 @@ $disabledOuPath = 'OU=Disabled,OU=ADEN-Users,DC=CHOADEN,DC=COM'
 
 "" > $runningLog
 ########### Traverse the table ############
-foreach ($item in $table.Rows)
+foreach ($item in $allData)
 {
 	$email = $item.Email.Trim()
     $outDate = $item.OutDate
-    #$forwardMail = $item.ForwardMail
-    #$forwardDate = $item.ForwardDate
     $adStatus = "Not enabled"
 
     $sam = $email.substring(0,$email.IndexOf("@")).Trim()
@@ -92,7 +106,6 @@ foreach ($item in $table.Rows)
             # clear aduser's manager and disabled aduser
             set-aduser $sam -clear manager
             Set-ADUser $sam -Replace @{msExchHideFromAddressLists=$True} 
-            #Set-adUser $sam -Replace @{msExchHideFromAddressLists="TRUE"}
             Disable-ADAccount $sam
             #Get-ADUser $sam | Move-ADObject -TargetPath $disabledOuPath
 
@@ -105,8 +118,6 @@ foreach ($item in $table.Rows)
         $adStatus = "Not found"
     }
     # write running log
-    #$count.ToString() + "`t" + $email + "`t" + $outDate + "`tForwardMail:" + $forwardMail + "`tForwardDate:" + $forwardDate + "`tIsLicensed:" + $msolUser.IsLicensed + "`tADUserStatus:" + $adStatus
-    #$count.ToString() + "`t" + $email + "`t" + $outDate + "`tForwardMail:" + $forwardMail + "`tForwardDate:" + $forwardDate + "`tIsLicensed:" + $msolUser.IsLicensed + "`tADUserStatus:" + $adStatus >> $runningLog
     $count.ToString() + "`t" + $email + "`t" + $outDate + "`tIsLicensed:" + $msolUser.IsLicensed + ",`tADUserStatus:" + $adStatus
     $count.ToString() + "`t" + $email + "`t" + $outDate + "`tIsLicensed:" + $msolUser.IsLicensed + ",`tADUserStatus:" + $adStatus >> $runningLog
 
