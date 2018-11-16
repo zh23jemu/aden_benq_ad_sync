@@ -101,7 +101,6 @@ $tableCadena=$datasetCadena.Tables[0]
 $connectionCadena.Close()
 
 $allData = $tableBenq.Rows + $tableCadena.Rows
-break
 
 $count = 1
 
