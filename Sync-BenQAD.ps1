@@ -56,7 +56,7 @@ $connectionStringCadena = "Data Source=ccnsvwhqdwh02.choaden.com;Initial Catalog
 $queryBenq = "select EMPLOYEEID,FIRSTNAME,LASTNAME,DisplayName,Initials,Email,Dept,Region,JobTitle,OFFICEPHONE,EXT,MobilePhone,ReportToID,'BENQ' as source
 	from [dbo].[v_OutlookData]
     where (leavedate='' or LeaveDate is null) and (OutDate='' or OutDate is null)" 
-$queryCadena = "select EmployeeID,FirstName,LastName,Name as Displayname,'' as initials,Email,Department as dept,Region,JobTitle,'' as officephone,'' as ext,'' as mobilephone,SupervisorID as reporttoid,'CADENA' as source 
+$queryCadena = "select EmployeeID,FirstName,LastName,iif(secondname='' or secondname is null,name,secondname) as displayname,'' as initials,Email,Department as dept,Region,JobTitle,'' as officephone,'' as ext,'' as mobilephone,SupervisorID as reporttoid,'CADENA' as source 
     from dbo.HR_EMPS_VN 
     where EmployeeID is not NULL and EmployeeID <>'' and Email like '%@adenservices.com' and EmployeeStatus = 'Active'"
 
@@ -101,6 +101,7 @@ $tableCadena=$datasetCadena.Tables[0]
 $connectionCadena.Close()
 
 $allData = $tableBenq.Rows + $tableCadena.Rows
+break
 
 $count = 1
 
