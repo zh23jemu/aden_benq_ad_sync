@@ -15,14 +15,16 @@ get-pssession | remove-pssession
 $connectionStringBenq = "Data Source=97VMDBSERVER.CHOADEN.COM;Initial Catalog=eHR;User Id=exchange;Password=exchange"
 $connectionStringCadena = "Data Source=ccnsvwhqdwh02.choaden.com;Initial Catalog=BI_HR;User Id=weaden;Password=adenweaden@123"
 
-$queryBenq = "select email,outdate 
-    from [dbo].[v_OutlookData] 
-    where LeaveDate <>'' and LeaveDate <= GETDATE() and email in (select email from v_OutlookData group by email having count(*)=1)"
+$queryBenq = "select email,leavedate from [dbo].[v_OutlookData] 
+    where LeaveDate <>'' and LeaveDate <= GETDATE() and Email not in
+        (select Email from [dbo].[v_OutlookData] 
+            where email in 
+                (select email from v_OutlookData group by email having count(*)>1) and (LeaveDate='' or LeaveDate is null))"
 
-$queryCadena = "select Email,'' as outdate 
+<#$queryCadena = "select Email,'' as outdate 
     from dbo.HR_EMPS_VN 
     where EmployeeStatus = 'Resigned' and Email like '%@adenservices.com'"
-
+#>
 
 
 #############################################
@@ -65,7 +67,7 @@ $tableBenq=$datasetBenq.Tables[0]
 
 $connectionBenq.Close()
 
-$connectionCadena = New-Object -TypeName System.Data.SqlClient.SqlConnection
+<#$connectionCadena = New-Object -TypeName System.Data.SqlClient.SqlConnection
 
 $connectionCadena.ConnectionString = $connectionStringCadena
 $commandCadena = $connectionCadena.CreateCommand()
@@ -75,9 +77,9 @@ $datasetCadena = New-Object -TypeName System.Data.DataSet
 $adapterCadena.Fill($datasetCadena)
 $tableCadena=$datasetCadena.Tables[0]
 
-$connectionCadena.Close()
+$connectionCadena.Close()#>
 
-$allData = $tableBenq.Rows + $tableCadena.Rows
+$allData = $tableBenq.Rows# + $tableCadena.Rows
 
 $count = 1
 
