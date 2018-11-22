@@ -1,7 +1,7 @@
 #############################################
 # Retire-Convert.ps1
 # Rewrited: 30-Jul-2018
-# Updated: 12-Nov-2018
+# Updated: 22-Nov-2018
 # Billy Zhou
 # This script is used to remove retired employees' office 365 license and disable their aduser account.
 #############################################
@@ -21,19 +21,22 @@ $queryBenq = "select email,leavedate from [dbo].[v_OutlookData]
             where email in 
                 (select email from v_OutlookData group by email having count(*)>1) and (LeaveDate='' or LeaveDate is null))"
 
-<#$queryCadena = "select Email,'' as outdate 
-    from dbo.HR_EMPS_VN 
-    where EmployeeStatus = 'Resigned' and Email like '%@adenservices.com'"
-#>
+$queryCadena = "select Email,'' as leavedate from dbo.HR_EMPS_VN
+    where EmployeeStatus = 'resigned' and Email like '%@adenservices.com%' and Email not in
+        (select Email from dbo.HR_EMPS_VN 
+            where email in 
+                (select email from dbo.HR_EMPS_VN  group by email having count(*)>1) and (EmployeeStatus = 'Active'))"
 
 
 #############################################
 ## Prepare Log                         #####
 #############################################
+$ScriptFolder = Split-Path $MyInvocation.MyCommand.Definition -Parent
 $batchNo = Get-Date -Format 'yyyyMMdd'
 $LogPath = "C:\log\RetireConvert\"
 $runningLog = $LogPath + "RunningLog.log"
 $RetireLog = $LogPath + "RetireConvert" + $batchNo + ".log"
+$exclusion = Get-Content ($ScriptFolder + "\exclusion\Retire-Convert.txt")
 if (!(Test-Path $LogPath))
 {
     mkdir $LogPath
@@ -41,8 +44,8 @@ if (!(Test-Path $LogPath))
 
 ######### Prepare Office 365 ##########
 
-$ScriptFolder = Split-Path $MyInvocation.MyCommand.Definition -Parent
 $File = $ScriptFolder + "\adminpwd"
+
 [Byte[]] $key = (1..16) 
 
 $Office365Username = "admin@adengroup.onmicrosoft.com"
@@ -67,7 +70,7 @@ $tableBenq=$datasetBenq.Tables[0]
 
 $connectionBenq.Close()
 
-<#$connectionCadena = New-Object -TypeName System.Data.SqlClient.SqlConnection
+$connectionCadena = New-Object -TypeName System.Data.SqlClient.SqlConnection
 
 $connectionCadena.ConnectionString = $connectionStringCadena
 $commandCadena = $connectionCadena.CreateCommand()
@@ -77,9 +80,9 @@ $datasetCadena = New-Object -TypeName System.Data.DataSet
 $adapterCadena.Fill($datasetCadena)
 $tableCadena=$datasetCadena.Tables[0]
 
-$connectionCadena.Close()#>
+$connectionCadena.Close()
 
-$allData = $tableBenq.Rows# + $tableCadena.Rows
+$allData = $tableBenq.Rows + $tableCadena.Rows
 
 $count = 1
 
@@ -95,53 +98,61 @@ $disabledOuPath = 'OU=Disabled,OU=ADEN-Users,DC=CHOADEN,DC=COM'
 foreach ($item in $allData)
 {
 	$email = $item.Email.Trim()
-    $outDate = $item.OutDate
-    $adStatus = "Not enabled"
-
-    $sam = $email.substring(0,$email.IndexOf("@")).Trim()
-    $msolUser = Get-MsolUser -UserPrincipalName $email -ErrorAction SilentlyContinue
-
-    if ([bool] (Get-ADUser -Filter { SamAccountName -eq $sam }) -eq $true) # if aduser exists
+    if ($exclusion -notcontains $email)
     {
-        if ((Get-ADUser -Filter { SamAccountName -eq $sam }).Enabled -eq $true) # if aduser is enabled
-        {
-            # clear aduser's manager and disabled aduser
-            set-aduser $sam -clear manager
-            Set-ADUser $sam -Replace @{msExchHideFromAddressLists=$True} 
-            Disable-ADAccount $sam
-            #Get-ADUser $sam | Move-ADObject -TargetPath $disabledOuPath
+        $outDate = $item.OutDate
+        $adStatus = "Not enabled"
 
-            $adStatus = "Disabled"
-            "ADuser: " + $sam + " has been disabled" >> $RetireLog
+        $sam = $email.substring(0,$email.IndexOf("@")).Trim()
+        $msolUser = Get-MsolUser -UserPrincipalName $email -ErrorAction SilentlyContinue
+
+        if ([bool] (Get-ADUser -Filter { SamAccountName -eq $sam }) -eq $true) # if aduser exists
+        {
+            if ((Get-ADUser -Filter { SamAccountName -eq $sam }).Enabled -eq $true) # if aduser is enabled
+            {
+                # clear aduser's manager and disabled aduser
+                set-aduser $sam -clear manager
+                Set-ADUser $sam -Replace @{msExchHideFromAddressLists=$True} 
+                Disable-ADAccount $sam
+                #Get-ADUser $sam | Move-ADObject -TargetPath $disabledOuPath
+
+                $adStatus = "Disabled"
+                "ADuser: " + $sam + " has been disabled" >> $RetireLog
+            }
         }
+        else
+        {
+            $adStatus = "Not found"
+        }
+        # write running log
+        $count.ToString() + "`t" + $email + "`t" + $outDate + "`tIsLicensed:" + $msolUser.IsLicensed + ",`tADUserStatus:" + $adStatus
+        $count.ToString() + "`t" + $email + "`t" + $outDate + "`tIsLicensed:" + $msolUser.IsLicensed + ",`tADUserStatus:" + $adStatus >> $runningLog
+
+	    If ($null -ne $msolUser)
+	    {
+            #Set-Mailbox $email -ForwardingAddress  "admin@aden.partner.onmschina.cn" -DeliverToMailboxAndForward $False 
+            #Set-MailboxAutoReplyConfiguration -Identity $email -AutoReplyState Enabled -ExternalMessage "" -InternalMessage ""
+
+            # remove lic
+            # Set-Mailbox $email -Type shared
+            Set-Mailbox $email -HiddenFromAddressListsEnabled $true -ErrorAction SilentlyContinue
+		    if ($msolUser.isLicensed -eq $true)
+		    {
+                Set-MsolUserLicense -UserPrincipalName $email  -RemoveLicenses $license1 -ErrorAction SilentlyContinue
+                Set-MsolUserLicense -UserPrincipalName $email  -RemoveLicenses $license2 -ErrorAction SilentlyContinue
+                Set-MsolUserLicense -UserPrincipalName $email  -RemoveLicenses $license3 -ErrorAction SilentlyContinue
+                Set-MsolUserLicense -UserPrincipalName $email  -RemoveLicenses $license4 -ErrorAction SilentlyContinue
+                # block msoluser from logon
+                Set-MsolUser -UserPrincipalName $email -BlockCredential $true
+
+                "Msoluser: " + $email + " 's license has been removed" >> $RetireLog
+            }
+        }        
     }
     else
     {
-        $adStatus = "Not found"
-    }
-    # write running log
-    $count.ToString() + "`t" + $email + "`t" + $outDate + "`tIsLicensed:" + $msolUser.IsLicensed + ",`tADUserStatus:" + $adStatus
-    $count.ToString() + "`t" + $email + "`t" + $outDate + "`tIsLicensed:" + $msolUser.IsLicensed + ",`tADUserStatus:" + $adStatus >> $runningLog
-
-	If ($null -ne $msolUser)
-	{
-        #Set-Mailbox $email -ForwardingAddress  "admin@aden.partner.onmschina.cn" -DeliverToMailboxAndForward $False 
-        #Set-MailboxAutoReplyConfiguration -Identity $email -AutoReplyState Enabled -ExternalMessage "" -InternalMessage ""
-
-        # remove lic
-        # Set-Mailbox $email -Type shared
-        Set-Mailbox $email -HiddenFromAddressListsEnabled $true -ErrorAction SilentlyContinue
-		if ($msolUser.isLicensed -eq $true)
-		{
-            Set-MsolUserLicense -UserPrincipalName $email  -RemoveLicenses $license1 -ErrorAction SilentlyContinue
-            Set-MsolUserLicense -UserPrincipalName $email  -RemoveLicenses $license2 -ErrorAction SilentlyContinue
-            Set-MsolUserLicense -UserPrincipalName $email  -RemoveLicenses $license3 -ErrorAction SilentlyContinue
-            Set-MsolUserLicense -UserPrincipalName $email  -RemoveLicenses $license4 -ErrorAction SilentlyContinue
-            # block msoluser from logon
-            Set-MsolUser -UserPrincipalName $email -BlockCredential $true
-
-            "Msoluser: " + $email + " 's license has been removed" >> $RetireLog
-        }
+        $count.ToString() + "`t" + $email + "`tcontained in exclusion."
+        $count.ToString() + "`t" + $email + "`tcontained in exclusion." >> $runningLog
     }
     $count++
 }
