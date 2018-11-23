@@ -65,6 +65,7 @@ $queryCadena = "select EmployeeID,FirstName,LastName,iif(secondname='' or second
 ## Prepare Log File						#####
 #############################################
 
+$ScriptFolder = Split-Path $MyInvocation.MyCommand.Definition -Parent
 $batchNo =  Get-Date -Format 'yyyyMMddHH'
 $LogPath = "C:\log\SyncBenqAD\"
 $runningLog = $LogPath + "RunningLog.log"
