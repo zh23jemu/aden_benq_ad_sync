@@ -58,7 +58,7 @@ foreach ($item in $msolusers)
         $noLogonDays = ($today - $lastLogonTime).days
         if ($noLogonDays -gt 30)
         {
-            $item | Set-MsolUserLicense  -RemoveLicenses $stdLicense -ErrorAction SilentlyContinue
+            #$item | Set-MsolUserLicense  -RemoveLicenses $stdLicense -ErrorAction SilentlyContinue
             $item.UserPrincipalName + "`tLicense removed`tLastLogonDate is " + $noLogonDays + "days ago." >> $LicenseLog
         }
     }
@@ -70,7 +70,7 @@ foreach ($item in $msolusers)
         $createdDays = ($today - $mailboxCreatedTime).days
         if ($createdDays -gt 30)
         {
-            $item | Set-MsolUserLicense  -RemoveLicenses $stdLicense -ErrorAction SilentlyContinue
+            #$item | Set-MsolUserLicense  -RemoveLicenses $stdLicense -ErrorAction SilentlyContinue
             $item.UserPrincipalName + "`tLicense removed`tmailbox created " + $createdDays + "days ago but never logged on." >> $LicenseLog
         }
     }
