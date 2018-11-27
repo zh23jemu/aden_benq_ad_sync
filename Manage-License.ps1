@@ -64,9 +64,10 @@ foreach ($item in $msolusers)
     }
     else
     {
+        $lastLogonTime = (Get-MailboxStatistics $item.UserPrincipalName).LastLogonTime
         $mailboxCreatedTime = (Get-Mailbox $item.UserPrincipalName).WhenMailboxCreated
-        $count.ToString() + " " + $item.UserPrincipalName + "`tMailboxCreatedTime:" + $mailboxCreatedTime.Date
-        $count.ToString() + " " + $item.UserPrincipalName + "`tMailboxCreatedTime:" + $mailboxCreatedTime.Date >> $RunningStatusLog
+        $count.ToString() + " " + $item.UserPrincipalName + "`tMailboxCreatedTime:" + $mailboxCreatedTime.Date + "`tLastLogonTime:" + $lastLogonTime.Date
+        $count.ToString() + " " + $item.UserPrincipalName + "`tMailboxCreatedTime:" + $mailboxCreatedTime.Date + "`tLastLogonTime:" + $lastLogonTime.Date>> $RunningStatusLog
         $createdDays = ($today - $mailboxCreatedTime).days
         if ($createdDays -gt 30)
         {
