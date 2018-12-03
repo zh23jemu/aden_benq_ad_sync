@@ -48,7 +48,7 @@ $cadenaOU = "OU=CADENA,OU=ADEN-Users,DC=CHOADEN,DC=COM"
 # only get users with standard license
 $msolusers = Get-MsolUser -All | Where-Object {$_.Licenses.AccountSkuId -eq $stdLicense}
 $count = 1
-$noLogonTimeUsers = @()
+
 foreach ($item in $msolusers)
 {
     $lastLogonTime = (Get-MailboxStatistics $item.UserPrincipalName).LastLogonTime
@@ -63,7 +63,7 @@ foreach ($item in $msolusers)
             $item.UserPrincipalName + "`tLicense removed`tLastLogonDate is " + $noLogonDays + "days ago." >> $LicenseLog
         }
     }
-    else
+    <#else
     {
         $mailboxCreatedTime = (Get-Mailbox $item.UserPrincipalName).WhenMailboxCreated
         $count.ToString() + " " + $item.UserPrincipalName + "`tMailboxCreatedTime:" + $mailboxCreatedTime.Date + "`tLastLogonTime:" + $lastLogonTime.Date
@@ -75,7 +75,7 @@ foreach ($item in $msolusers)
             #$item | Set-MsolUserLicense  -RemoveLicenses $stdLicense -ErrorAction SilentlyContinue
             $item.UserPrincipalName + "`tLicense removed`tmailbox created " + $createdDays + "days ago but never logged on." >> $LicenseLog
         }
-    }
+    }#>
     $count++
 }
 
@@ -160,12 +160,6 @@ foreach ($item in $allUser)
        }
     }
     $count++
-}
-
-foreach ($item in $noLogonTimeUsers)
-{
-    Get-MailboxStatistics $item
-    Get-MailboxStatistics $item >> $RunningStatusLog
 }
 
 # count the lic again
