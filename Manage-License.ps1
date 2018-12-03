@@ -48,29 +48,30 @@ $cadenaOU = "OU=CADENA,OU=ADEN-Users,DC=CHOADEN,DC=COM"
 # only get users with standard license
 $msolusers = Get-MsolUser -All | Where-Object {$_.Licenses.AccountSkuId -eq $stdLicense}
 $count = 1
+$noLogonTimeUsers = @()
 foreach ($item in $msolusers)
 {
-    if ($null -ne (get-mailboxstatistics $item.UserPrincipalName).LastLogonTime)
+    $lastLogonTime = (Get-MailboxStatistics $item.UserPrincipalName).LastLogonTime
+    if ($null -ne $lastLogonTime)
     {
-        $lastLogonTime = (Get-MailboxStatistics $item.UserPrincipalName).LastLogonTime
         $count.ToString() + " " + $item.UserPrincipalName + "`tLastLogonTime:" + $lastLogonTime.Date
         $count.ToString() + " " + $item.UserPrincipalName + "`tLastLogonTime:" + $lastLogonTime.Date >> $RunningStatusLog
         $noLogonDays = ($today - $lastLogonTime).days
         if ($noLogonDays -gt 30)
         {
-            #$item | Set-MsolUserLicense  -RemoveLicenses $stdLicense -ErrorAction SilentlyContinue
+            $item | Set-MsolUserLicense  -RemoveLicenses $stdLicense -ErrorAction SilentlyContinue
             $item.UserPrincipalName + "`tLicense removed`tLastLogonDate is " + $noLogonDays + "days ago." >> $LicenseLog
         }
     }
     else
     {
-        $lastLogonTime = (Get-MailboxStatistics $item.UserPrincipalName).LastLogonTime
         $mailboxCreatedTime = (Get-Mailbox $item.UserPrincipalName).WhenMailboxCreated
         $count.ToString() + " " + $item.UserPrincipalName + "`tMailboxCreatedTime:" + $mailboxCreatedTime.Date + "`tLastLogonTime:" + $lastLogonTime.Date
         $count.ToString() + " " + $item.UserPrincipalName + "`tMailboxCreatedTime:" + $mailboxCreatedTime.Date + "`tLastLogonTime:" + $lastLogonTime.Date>> $RunningStatusLog
         $createdDays = ($today - $mailboxCreatedTime).days
         if ($createdDays -gt 30)
         {
+            $noLogonTimeUsers += $item.userprincipalname
             #$item | Set-MsolUserLicense  -RemoveLicenses $stdLicense -ErrorAction SilentlyContinue
             $item.UserPrincipalName + "`tLicense removed`tmailbox created " + $createdDays + "days ago but never logged on." >> $LicenseLog
         }
@@ -159,6 +160,12 @@ foreach ($item in $allUser)
        }
     }
     $count++
+}
+
+foreach ($item in $noLogonTimeUsers)
+{
+    Get-MailboxStatistics $item
+    Get-MailboxStatistics $item >> $RunningStatusLog
 }
 
 # count the lic again
