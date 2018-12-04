@@ -33,8 +33,7 @@ $batchNo =  Get-Date -Format 'yyyyMMddHH'
 
 #log file
 $LicenseLog = "C:\log\ManageLic\ManageLicLog" + $batchNo +".log"
-$RunningStatusLog = "C:\log\ManageLic\RunningStatus" + $batchNo +".log"
-
+$RunningStatusLog = "C:\log\ManageLic\RunningStatus.log"
 # clear running status log
 "" > $RunningStatusLog
 #license type
