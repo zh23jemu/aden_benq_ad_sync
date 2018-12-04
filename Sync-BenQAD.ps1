@@ -103,6 +103,7 @@ $tableCadena=$datasetCadena.Tables[0]
 $connectionCadena.Close()
 
 $allData = $tableBenq.Rows + $tableCadena.Rows
+#$allData = $tableCadena.Rows
 
 $count = 1
 
@@ -183,14 +184,25 @@ foreach ($item in $allData)
 	    }
         else
         {
-		    $useraccount = Get-ADUser -Filter {sAMAccountName  -eq $name}
-		    $useraccount2 = Get-ADUser -Filter {userPrincipalName  -eq $email}
+		    $useraccount = Get-ADUser -Properties employeeid -Filter {sAMAccountName  -eq $name}
+		    $useraccount2 = Get-ADUser -Properties employeeid -Filter {userPrincipalName  -eq $email}
 
 		    if($useraccount -ne $Null)
 		    {
-			    $count.ToString() + "`t" + $employeeId + "`t" + $name + "`t" + $email + "`tSAMACCOUNT already exists. Creation failed."
-			    $count.ToString() + "`t" + $employeeId + "`t" + $name + "`t" + $email + "`tSAMACCOUNT already exists. Creation failed." >> $runningLog
-			    $employeeId + "`t" + $name + "`t" + $email + "`tSAMACCOUNT already exists. Creation failed." >> $syncBenqADLog
+                if($useraccount.employeeid -ne '' -and $useraccount.employeeid -ne $null)
+                {
+			        $count.ToString() + "`t" + $employeeId + "`t" + $name + "`t" + $email + "`tSAMACCOUNT exists. Update failed because of empty employeeid."
+			        $count.ToString() + "`t" + $employeeId + "`t" + $name + "`t" + $email + "`tSAMACCOUNT exists. Update failed because of empty employeeid." >> $runningLog
+			        $employeeId + "`t" + $name + "`t" + $email + "`tSAMACCOUNT exists. Update failed because of empty employeeid." >> $syncBenqADLog
+                }
+                else
+                {
+                    set-aduser $useraccount.SamAccountName -EmployeeID $employeeId
+                    $count.ToString() + "`t" + $employeeId + "`t" + $name + "`t" + $email + "`tSAMACCOUNT exists. Employeeid updated."
+			        $count.ToString() + "`t" + $employeeId + "`t" + $name + "`t" + $email + "`tSAMACCOUNT exists. Employeeid updated." >> $runningLog
+			        $employeeId + "`t" + $name + "`t" + $email + "`tSAMACCOUNT exists. Employeeid updated." >> $syncBenqADLog
+
+                }
 		    }
 		    elseif($useraccount2 -ne $Null)
 		    {
