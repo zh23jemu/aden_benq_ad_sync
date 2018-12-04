@@ -179,8 +179,8 @@ foreach ($item in $allData)
 		        -Manager $managerName `
 		        -Replace @{msExchHideFromAddressLists=$False}
 
-	        $count.ToString() + "`t" + $employeeId + "`t" + $sam + "`t" + $email + "`tADUser has been updated."
-	        $count.ToString() + "`t" + $employeeId + "`t" + $sam + "`t" + $email + "`tADUser has been updated." >> $runningLog
+	        $count.ToString() + "`t" + $employeeId + "`t" + $sam + "`t" + $email + "`tADUser updated."
+	        $count.ToString() + "`t" + $employeeId + "`t" + $sam + "`t" + $email + "`tADUser updated." >> $runningLog
 	    }
         else
         {
@@ -189,18 +189,19 @@ foreach ($item in $allData)
 
 		    if($useraccount -ne $Null)
 		    {
-                if($useraccount.employeeid -ne '' -and $useraccount.employeeid -ne $null)
+                $currentEmployeeId = $useraccount.employeeid
+                if($currentEmployeeId -ne '' -and $currentEmployeeId -ne $null)
                 {
-			        $count.ToString() + "`t" + $employeeId + "`t" + $name + "`t" + $email + "`tSAMACCOUNT exists. Update failed because of empty employeeid."
-			        $count.ToString() + "`t" + $employeeId + "`t" + $name + "`t" + $email + "`tSAMACCOUNT exists. Update failed because of empty employeeid." >> $runningLog
-			        $employeeId + "`t" + $name + "`t" + $email + "`tSAMACCOUNT exists. Update failed because of empty employeeid." >> $syncBenqADLog
+			        $count.ToString() + "`t" + $employeeId + "`t" + $name + "`t" + $email + "`tEmployeeid conflict. Current employeeid in AD: " + $currentEmployeeId
+			        $count.ToString() + "`t" + $employeeId + "`t" + $name + "`t" + $email + "`tEmployeeid conflict. Current employeeid in AD: " + $currentEmployeeId
+			        $employeeId + "`t" + $name + "`t" + $email + "`tEmployeeid conflict. Current employeeid in AD: " + $currentEmployeeId >> $syncBenqADLog
                 }
                 else
                 {
                     set-aduser $useraccount.SamAccountName -EmployeeID $employeeId
-                    $count.ToString() + "`t" + $employeeId + "`t" + $name + "`t" + $email + "`tSAMACCOUNT exists. Employeeid updated."
-			        $count.ToString() + "`t" + $employeeId + "`t" + $name + "`t" + $email + "`tSAMACCOUNT exists. Employeeid updated." >> $runningLog
-			        $employeeId + "`t" + $name + "`t" + $email + "`tSAMACCOUNT exists. Employeeid updated." >> $syncBenqADLog
+                    $count.ToString() + "`t" + $employeeId + "`t" + $name + "`t" + $email + "`tEmployeeid updated."
+			        $count.ToString() + "`t" + $employeeId + "`t" + $name + "`t" + $email + "`tEmployeeid updated." >> $runningLog
+			        $employeeId + "`t" + $name + "`t" + $email + "`tEmployeeid updated." >> $syncBenqADLog
 
                 }
 		    }
@@ -234,9 +235,9 @@ foreach ($item in $allData)
 					    -AccountPassword (ConvertTo-SecureString "Aden@123" -AsPlainText -Force) `
 					    -ChangePasswordAtLogon $false `
 					    -enabled $true
-					    $count.ToString() + $employeeId + "`t" + $name + "`t" + $email + "`thas been created."
-					    $count.ToString() + $employeeId + "`t" + $name + "`t" + $email + "`thas been created." >> $runningLog
-					    $employeeId + "`t" + $name + "`t" + $email + "`thas been created." >> $syncBenqADLog
+					    $count.ToString() + $employeeId + "`t" + $name + "`t" + $email + "`tAD account created."
+					    $count.ToString() + $employeeId + "`t" + $name + "`t" + $email + "`tAD account created." >> $runningLog
+					    $employeeId + "`t" + $name + "`t" + $email + "`tAD account created." >> $syncBenqADLog
 			    }
 			    else 
 			    {
@@ -248,8 +249,8 @@ foreach ($item in $allData)
     }
     else
     {
-        $count.ToString() + "`t" + $email + "`tis skipped for it's in the exclusion list."
-		$count.ToString() + "`t" + $email + "`tis skipped for it's in the exclusion list." >> $runningLog
+        $count.ToString() + "`t" + $email + "`tskipped for in exclusion list."
+		$count.ToString() + "`t" + $email + "`tskipped for in exclusion list." >> $runningLog
     }
     $count ++
 }
