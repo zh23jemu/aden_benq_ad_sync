@@ -18,11 +18,12 @@ $connectionString = "Data Source=192.168.0.97;Initial Catalog=eHR;User Id=exchan
 #############################################
 ## Prepare Log                         #####
 #############################################
+$ScriptFolder = Split-Path $MyInvocation.MyCommand.Definition -Parent
 $batchNo = Get-Date -Format 'yyyyMMdd'
 $runningLog = "C:\log\UpdatePhoto\RunningLog.log"
 $updatePhotoLog = "C:\log\UpdatePhoto\UpdatePhotoLog" + $batchNo + ".log"
 
-$File = "c:\scripts\adminpwd"
+$File = $ScriptFolder + "\adminpwd"
 [Byte[]] $key = (1..16) 
 
 $Office365Username = "admin@adengroup.onmicrosoft.com"

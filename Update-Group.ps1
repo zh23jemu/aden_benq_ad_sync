@@ -15,11 +15,12 @@ $connectionString = "Data Source=192.168.0.97;Initial Catalog=eHR;User Id=exchan
 $queryGroup = "select DISTINCT emailgroup from v_UserDL" 
 $queryEmail = "select * from v_UserDL" 
 
-#######################################
-# Prepare Office 365
-#######################################
+$ScriptFolder = Split-Path $MyInvocation.MyCommand.Definition -Parent
 
-$File = "c:\scripts\adminpwd"
+######### Prepare Office 365 ##########
+
+$File = $ScriptFolder + "\adminpwd"
+
 [Byte[]] $key = (1..16) 
 
 $Office365Username = "admin@adengroup.onmicrosoft.com"

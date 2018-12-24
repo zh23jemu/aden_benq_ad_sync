@@ -12,7 +12,9 @@ get-pssession | remove-pssession
 ## Prepare O365 and Exchange            #####
 #############################################
 
-$File = "c:\scripts\adminpwd"
+$ScriptFolder = Split-Path $MyInvocation.MyCommand.Definition -Parent
+
+$File = $ScriptFolder + "\adminpwd"
 [Byte[]] $key = (1..16) 
 
 $Office365Username = "admin@adengroup.onmicrosoft.com"
