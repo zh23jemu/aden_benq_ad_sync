@@ -11,7 +11,7 @@ get-pssession | remove-pssession
 #############################################
 ## Prepare BenQ                         #####
 #############################################
-
+#$query = "select * from dbo.v_OutlookData where Email like 'amy.xu%'"
 $query = "select * from [dbo].[v_OutlookData] where LeaveDate = ''"
 $connectionString = "Data Source=192.168.0.97;Initial Catalog=eHR;User Id=exchange;Password=exchange"
 
