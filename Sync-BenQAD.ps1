@@ -233,7 +233,7 @@ foreach ($item in $allData)
 					    -Manager $managerName `
 					    -Path $ouPath   `
 					    -AccountPassword (ConvertTo-SecureString "Aden@123" -AsPlainText -Force) `
-					    -ChangePasswordAtLogon $false `
+					    -ChangePasswordAtLogon $true `
 					    -enabled $true
 					    $count.ToString() + $employeeId + "`t" + $name + "`t" + $email + "`tAD account created."
 					    $count.ToString() + $employeeId + "`t" + $name + "`t" + $email + "`tAD account created." >> $runningLog
