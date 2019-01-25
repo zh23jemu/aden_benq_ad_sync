@@ -216,7 +216,8 @@ foreach ($item in $allData)
 			    $ouPath = "OU="+ $ou +",OU=ADEN-Users,DC=CHOADEN,DC=COM"
 			    if([adsi]::Exists("LDAP://$ouPath"))
 			    {
-				    New-ADUser $name `
+                    $password = "Aden@123" + $employeeId
+                    New-ADUser $name `
 					    -SamAccountName $name `
 					    -userprincipalname $email `
 					    -Surname $lastName `
@@ -232,11 +233,10 @@ foreach ($item in $allData)
 					    -EmployeeID $employeeId `
 					    -Manager $managerName `
 					    -Path $ouPath   `
-					    -AccountPassword (ConvertTo-SecureString "Aden@123" -AsPlainText -Force) `
-					    -ChangePasswordAtLogon $true `
+					    -AccountPassword (ConvertTo-SecureString $password -AsPlainText -Force) `
 					    -enabled $true
-					    $count.ToString() + $employeeId + "`t" + $name + "`t" + $email + "`tAD account created."
-					    $count.ToString() + $employeeId + "`t" + $name + "`t" + $email + "`tAD account created." >> $runningLog
+					    $count.ToString() + $employeeId + "`t" + $name + "`t" + $password +"`t" + $email + "`tAD account created."
+					    $count.ToString() + $employeeId + "`t" + $name + "`t" + $password +"`t" + $email + "`tAD account created." >> $runningLog
 					    $employeeId + "`t" + $name + "`t" + $email + "`tAD account created." >> $syncBenqADLog
 			    }
 			    else 
