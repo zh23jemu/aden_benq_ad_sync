@@ -102,7 +102,7 @@ foreach ($item in $table.Rows)
             Add-DistributionGroupMember -Identity $emailgroup -Member $email -Confirm:$false -ErrorAction Stop
             $count.ToString() + "`t" + $email + " has been added to group:`t" + $emailgroup
             $count.ToString() + "`t" + $email + " has been added to group:`t" + $emailgroup >> $runningLog
-            $email + " has been added to group:`t" + $emailgroup >> $UpdateGroupLog
+            $email + "`tadded to group:`t" + $emailgroup >> $UpdateGroupLog
         }
         Catch [System.Exception]
         {
@@ -125,6 +125,34 @@ foreach ($item in $table.Rows)
     }
     $count++
 }
+
+# remove members who no longer in groups
+$count = 1
+foreach ($groupItem in $emailgroups)
+{
+    $emailsInGroup = Get-DistributionGroupMember $groupItem | where {$_.RecipientType -eq 'UserMailbox'} | select -ExpandProperty PrimarySMTPAddress 
+    $tableEmails = $table | where {$_.emailgroup -eq $groupItem} | select -ExpandProperty email
+    foreach ($item in $emailsInGroup)
+    {
+        if($tableEmails -notcontains $item)
+        {
+            try
+            {
+                Remove-DistributionGroupMember $groupItem -Member $item -Confirm:$false -ErrorAction Stop
+                $count.ToString() + "`t" + $item + "`tremoved from`t" + $groupItem
+                $count.ToString() + "`t" + $item + "`tremoved from`t" + $groupItem >> $runningLog
+                $item + "`tremoved from group:`t" + $groupItem >> $UpdateGroupLog
+            }
+            Catch [System.Exception]
+            {
+                $count.ToString() + "`t" + $email + " $_.Exception"
+                $count.ToString() + "`t" + $email + " $_.Exception" >> $runningLog
+            }
+            $count++
+        }
+    }
+}
+
 # send log content through mail only when log file exists
 if (Test-Path $UpdateGroupLog)
 {
