@@ -78,7 +78,7 @@ foreach ($item in $emailgroups)
     $count++
 }
 
-###### Update group members ######
+###### Connect to Database ######
 $connection = New-Object -TypeName System.Data.SqlClient.SqlConnection
 
 $connection.ConnectionString = $connectionString
@@ -89,6 +89,7 @@ $dataset = New-Object -TypeName System.Data.DataSet
 $adapter.Fill($dataset)
 $table=$dataset.Tables[0]
 
+###### Update group members ######
 $count = 1
 foreach ($item in $table.Rows)
 {
@@ -130,8 +131,9 @@ foreach ($item in $table.Rows)
 $count = 1
 foreach ($groupItem in $emailgroups)
 {
-    $emailsInGroup = Get-DistributionGroupMember $groupItem | where {$_.RecipientType -eq 'UserMailbox'} | select -ExpandProperty PrimarySMTPAddress 
-    $tableEmails = $table | where {$_.emailgroup -eq $groupItem} | select -ExpandProperty email
+    $emailsInGroup = Get-DistributionGroupMember $groupItem -ResultSize unlimited | where {$_.RecipientType -eq 'UserMailbox'} | select -ExpandProperty PrimarySMTPAddress 
+    # some email address in DB has space, so use trim to remove space
+    $tableEmails = $table | where {$_.emailgroup -eq $groupItem} | select @{e={$_.email.tostring().trim()};l='trimmedEmail'} | select -ExpandProperty trimmedEmail
     foreach ($item in $emailsInGroup)
     {
         if($tableEmails -notcontains $item)
