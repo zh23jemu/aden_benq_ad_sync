@@ -195,7 +195,7 @@ foreach ($item in $allData)
                 {
 			        $count.ToString() + "`t" + $employeeId + "`t" + $name + "`t" + $email + "`tEmployeeid conflict. Current employeeid in AD: " + $currentEmployeeId
 			        $count.ToString() + "`t" + $employeeId + "`t" + $name + "`t" + $email + "`tEmployeeid conflict. Current employeeid in AD: " + $currentEmployeeId
-			        $employeeId + "`t" + $name + "`t" + $email + "`tEmployeeid updated from " + $currentEmployeeId + " to " + $employeeId >> $syncBenqADLog
+			        $employeeId + "`t" + $name + "`t" + $email + "`tEmployeeid updated " + $currentEmployeeId + " --> " + $employeeId >> $syncBenqADLog
                 }
                 else
                 {
