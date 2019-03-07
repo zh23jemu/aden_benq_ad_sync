@@ -190,15 +190,15 @@ foreach ($item in $allData)
 		    if($useraccount -ne $Null)
 		    {
                 $currentEmployeeId = $useraccount.employeeid
+                set-aduser $useraccount.SamAccountName -EmployeeID $employeeId
                 if($currentEmployeeId -ne '' -and $currentEmployeeId -ne $null)
                 {
 			        $count.ToString() + "`t" + $employeeId + "`t" + $name + "`t" + $email + "`tEmployeeid conflict. Current employeeid in AD: " + $currentEmployeeId
 			        $count.ToString() + "`t" + $employeeId + "`t" + $name + "`t" + $email + "`tEmployeeid conflict. Current employeeid in AD: " + $currentEmployeeId
-			        $employeeId + "`t" + $name + "`t" + $email + "`tEmployeeid conflict. Current employeeid in AD: " + $currentEmployeeId >> $syncBenqADLog
+			        $employeeId + "`t" + $name + "`t" + $email + "`tEmployeeid updated from " + $currentEmployeeId + " to " + $employeeId >> $syncBenqADLog
                 }
                 else
                 {
-                    set-aduser $useraccount.SamAccountName -EmployeeID $employeeId
                     $count.ToString() + "`t" + $employeeId + "`t" + $name + "`t" + $email + "`tEmployeeid updated."
 			        $count.ToString() + "`t" + $employeeId + "`t" + $name + "`t" + $email + "`tEmployeeid updated." >> $runningLog
 			        $employeeId + "`t" + $name + "`t" + $email + "`tEmployeeid updated." >> $syncBenqADLog
@@ -216,7 +216,7 @@ foreach ($item in $allData)
 			    $ouPath = "OU="+ $ou +",OU=ADEN-Users,DC=CHOADEN,DC=COM"
 			    if([adsi]::Exists("LDAP://$ouPath"))
 			    {
-                    $password = "Aden@123" + $employeeId
+                    $password = "Aden@" + $employeeId
                     New-ADUser $name `
 					    -SamAccountName $name `
 					    -userprincipalname $email `
