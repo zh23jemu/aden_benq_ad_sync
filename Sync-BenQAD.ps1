@@ -255,7 +255,7 @@ foreach ($item in $allData)
 					    -enabled $true
 					    $count.ToString() + $employeeId + "`t" + $name + "`t" + $password +"`t" + $email + "`tAD account created."
 					    $count.ToString() + $employeeId + "`t" + $name + "`t" + $password +"`t" + $email + "`tAD account created." >> $runningLog
-					    $employeeId + "`t" + $name + "`t" + $email + "`tAD account created." >> $syncBenqADLog
+					    $employeeId + "`t" + $adusername + "`t" + $email + "`tAD account created." >> $syncBenqADLog
 			    }
 			    else 
 			    {
