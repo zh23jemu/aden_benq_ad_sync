@@ -43,6 +43,18 @@ function HandleNull($oldvalue)
 	}
 	return $value
 }
+function FormatSamAccountName($username)
+{
+    if ($username.length -gt 20)
+    {
+        $value = $username.substring(0,20)
+    }
+    else
+    {
+        $value = $username
+    }
+    return $value
+}
 
 get-pssession | remove-pssession
 
@@ -56,10 +68,15 @@ $connectionStringCadena = "Data Source=ccnsvwhqdwh02.choaden.com;Initial Catalog
 $queryBenq = "select EMPLOYEEID,FIRSTNAME,LASTNAME,DisplayName,Initials,Email,Dept,Region,JobTitle,OFFICEPHONE,EXT,MobilePhone,ReportToID,'BENQ' as source
 	from [dbo].[v_OutlookData]
     where (leavedate='' or LeaveDate is null) and (OutDate='' or OutDate is null)" 
+#$queryBenq = ""
+
 $queryCadena = "select EmployeeID,FirstName,LastName,iif(secondname='' or secondname is null,name,secondname) as displayname,'' as initials,Email,Department as dept,Region,JobTitle,'' as officephone,'' as ext,'' as mobilephone,SupervisorID as reporttoid,'CADENA' as source 
     from dbo.HR_EMPS_VN 
     where EmployeeID is not NULL and EmployeeID <>'' and Email like '%@adenservices.com' and EmployeeStatus = 'Active'"
 
+#$queryCadena = "select EmployeeID,FirstName,LastName,iif(secondname='' or secondname is null,name,secondname) as displayname,'' as initials,Email,Department as dept,Region,JobTitle,'' as officephone,'' as ext,'' as mobilephone,SupervisorID as reporttoid,'CADENA' as source 
+#    from dbo.HR_EMPS_VN 
+#    where EmployeeID is not NULL and EmployeeID <>'' and Email like '%@adenservices.com' and EmployeeStatus = 'Active' and EmployeeID = '650000448'"
 
 #############################################
 ## Prepare Log File						#####
@@ -217,8 +234,9 @@ foreach ($item in $allData)
 			    if([adsi]::Exists("LDAP://$ouPath"))
 			    {
                     $password = "Aden@" + $employeeId
-                    New-ADUser $name `
-					    -SamAccountName $name `
+                    $adusername = FormatSamAccountName($name) # ad username can not exceed 20 characters
+                    New-ADUser $adusername `
+					    -SamAccountName $adusername `
 					    -userprincipalname $email `
 					    -Surname $lastName `
 					    -GivenName $firstName `
