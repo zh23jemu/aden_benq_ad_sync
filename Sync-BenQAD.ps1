@@ -193,8 +193,8 @@ foreach ($item in $allData)
 		        -Initials $initials `
 		        -userprincipalname $email `
 		        -EmailAddress $email `
-		        -Manager $managerName `
-		        -Replace @{msExchHideFromAddressLists=$False}
+		        -Manager $managerName
+		        #-Replace @{msExchHideFromAddressLists=$False}
 
 	        $count.ToString() + "`t" + $employeeId + "`t" + $sam + "`t" + $email + "`tADUser updated."
 	        $count.ToString() + "`t" + $employeeId + "`t" + $sam + "`t" + $email + "`tADUser updated." >> $runningLog
