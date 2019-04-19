@@ -94,6 +94,7 @@ $license4 = 'adengroup:STANDARDPACK'
 $disabledOuPath = 'OU=Disabled,OU=ADEN-Users,DC=CHOADEN,DC=COM'
 
 "" > $runningLog
+#break
 ########### Traverse the table ############
 foreach ($item in $allData)
 {
@@ -117,7 +118,18 @@ foreach ($item in $allData)
                 #Get-ADUser $sam | Move-ADObject -TargetPath $disabledOuPath
 
                 $adStatus = "Disabled"
-                "ADuser: " + $sam + " has been disabled" >> $RetireLog
+                $sam + " has been disabled" >> $RetireLog
+                
+                $adPrincipalGroups = Get-ADPrincipalGroupMembership $sam | select name
+                foreach ($item in $adPrincipalGroups)
+                {
+                    if ($item.name -ne "Domain Users")
+                    {
+                        Remove-ADGroupMember $item.name -Members $sam -Confirm:$false
+                        $sam + " has been removed from " + $item.name
+                        $sam + " has been removed from " + $item.name >> $RetireLog  
+                    }
+                }
             }
         }
         else
@@ -145,7 +157,7 @@ foreach ($item in $allData)
                 # block msoluser from logon
                 Set-MsolUser -UserPrincipalName $email -BlockCredential $true
 
-                "Msoluser: " + $email + " 's license has been removed" >> $RetireLog
+                $email + " 's license has been removed" >> $RetireLog
             }
         }        
     }
