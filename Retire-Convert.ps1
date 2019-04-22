@@ -109,6 +109,16 @@ foreach ($item in $allData)
 
         if ([bool] (Get-ADUser -Filter { SamAccountName -eq $sam }) -eq $true) # if aduser exists
         {
+            $adPrincipalGroups = Get-ADPrincipalGroupMembership $sam | select name
+            foreach ($item in $adPrincipalGroups)
+            {
+                if ($item.name -ne "Domain Users")
+                {
+                    Remove-ADGroupMember $item.name -Members $sam -Confirm:$false
+                    $sam + " has been removed from " + $item.name
+                    $sam + " has been removed from " + $item.name >> $RetireLog  
+                }
+            }
             if ((Get-ADUser -Filter { SamAccountName -eq $sam }).Enabled -eq $true) # if aduser is enabled
             {
                 # clear aduser's manager and disabled aduser
@@ -119,17 +129,6 @@ foreach ($item in $allData)
 
                 $adStatus = "Disabled"
                 $sam + " has been disabled" >> $RetireLog
-                
-                $adPrincipalGroups = Get-ADPrincipalGroupMembership $sam | select name
-                foreach ($item in $adPrincipalGroups)
-                {
-                    if ($item.name -ne "Domain Users")
-                    {
-                        Remove-ADGroupMember $item.name -Members $sam -Confirm:$false
-                        $sam + " has been removed from " + $item.name
-                        $sam + " has been removed from " + $item.name >> $RetireLog  
-                    }
-                }
             }
         }
         else
