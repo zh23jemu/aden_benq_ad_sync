@@ -93,6 +93,13 @@ $license4 = 'adengroup:STANDARDPACK'
 
 $disabledOuPath = 'OU=Disabled,OU=ADEN-Users,DC=CHOADEN,DC=COM'
 
+$unfGroup = get-unifiedgroup
+$allMember = @()
+foreach ($item in $unfGroup)
+{
+    $allMember += Get-UnifiedGroupLinks $item.DisplayName -LinkType member | select PrimarySmtpAddress,@{name="unfgroup";expression={$item.DisplayName}}
+}
+
 "" > $runningLog
 #break
 ########### Traverse the table ############
@@ -157,6 +164,14 @@ foreach ($item in $allData)
                 Set-MsolUser -UserPrincipalName $email -BlockCredential $true
 
                 $email + " 's license has been removed" >> $RetireLog
+            }
+            $filterMember = $allMember | where PrimarySmtpAddress -Like $email
+
+            foreach ($item in $filterMember)
+            {
+                Remove-UnifiedGroupLinks -Identity $item.unfgroup -LinkType member -Links $item.PrimarySmtpAddress -Confirm:$false
+                $email + "`tremoved from`t" + $item.unfgroup
+                $email + "`tremoved from`t" + $item.unfgroup >> $RetireLog
             }
         }        
     }
