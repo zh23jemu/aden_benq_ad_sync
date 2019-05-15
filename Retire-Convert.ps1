@@ -132,7 +132,7 @@ foreach ($item in $allData)
                 set-aduser $sam -clear manager
                 Set-ADUser $sam -Replace @{msExchHideFromAddressLists=$True} 
                 Disable-ADAccount $sam
-                #Get-ADUser $sam | Move-ADObject -TargetPath $disabledOuPath
+                Get-ADUser $sam | Move-ADObject -TargetPath $disabledOuPath
 
                 $adStatus = "Disabled"
                 $sam + " has been disabled" >> $RetireLog
