@@ -171,7 +171,7 @@ foreach ($item in $allData)
 	    {
 		    $sam = $adAccount.SamAccountName
     	}
-	    if ($email -notlike "*@adenservices.com" -and $email -notlike "*@axingservices.com") 
+	    if ($email -notlike "*@adenservices.com" -and $email -notlike "*@axingservices.com" -and $email -notlike "*@rapid.life" -and $email -notlike "*@asap-rental.com") 
 	    {
 		    $count.ToString() + "`t" + $employeeId + "`t" + $sam + "`t" + $email + "`tEmail format error. AD user will not be created or updated."
 		    $count.ToString() + "`t" + $employeeId + "`t" + $sam + "`t" + $email + "`tEmail format error. AD user will not be created or updated." >> $runningLog
